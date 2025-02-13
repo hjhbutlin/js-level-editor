@@ -1,7 +1,7 @@
 body {
     text-align: center;
     font-family: 'Patrick Hand', cursive;
-    font-size: 8vh;
+    font-size: 6vh;
     color: azure;
     background-color: cadetblue;
 }
@@ -12,6 +12,17 @@ canvas {
     display: block;
     margin: auto;
 }
+
+#menuButtons {
+    min-width: none;
+    width: 20vw;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2vh;
+
+}
+
 #canvasContainer {
     padding-bottom: 3vh;
 }
@@ -69,10 +80,8 @@ button {
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 5vh;
-    transition-duration: 400ms;
+    font-size: clamp(1rem, 1vw + 2vh, 5rem);
 }
-
 
 button.important-button {
     background-color: #036742;
@@ -85,15 +94,19 @@ button.tool-button {
 
 
 button:hover {
-    background-color: #9abeb1;
+    background-color: #2aa478;
+    transition-duration: 400ms;
 }
+
 
 button:active {
     background-color: #19944a;
     transform: scale(0.9);
+    transition-duration: 400ms;
 }
 
 button.active {
     background-color: #19944a;
     transform: scale(0.9);
+    transition-duration: 400ms;
 }

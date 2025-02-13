@@ -132,7 +132,7 @@ document.querySelectorAll(".tool-button").forEach(button => {
     button.addEventListener("click", () => {
         selectedTool = Number(button.dataset.tool);
         
-        document.querySelectorAll(".tool-button").forEach(btn => btn.classList.remove("active"));
+        document.querySelectorAll(".tool-button").forEach(btn => { btn.classList.remove("active")});
 
         button.classList.add("active");
 
