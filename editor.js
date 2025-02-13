@@ -1,14 +1,17 @@
 const canvas = document.getElementById("gameGrid");
 const ctx = canvas.getContext("2d");
 
-canvas.width = 800;
-canvas.height = 400;
+const rows = 16;
+const cols = 32;
+const globalScale = 50;
 
-const tileSize = 25;
-const rows = canvas.height / tileSize;
-const cols = canvas.width / tileSize;
+let scale = window.innerWidth / globalScale;
 
-const tileColors = {
+canvas.width = scale * cols;
+canvas.height = scale * rows;
+let tileSize = scale;
+
+const tileColours = {
     1: "darkred",       // platform
     2: null,          // spike sold separately
     3: "darkcyan",    // spawn
@@ -39,6 +42,10 @@ function fillSpike(x,y,colour) {
 
 
 function drawGrid() {
+    canvas.width = scale * cols;
+    canvas.height = scale * rows;
+    let tileSize = scale;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     levelGridData[spawnY][spawnX] = 3;
     levelGridData[goalY][goalX] = 4;
@@ -52,14 +59,13 @@ function drawGrid() {
             // handle spike case
             if (levelGridData[y][x] === 2) {
                 fillSpike(x, y, "red");
-            } else if (tileColors[levelGridData[y][x]]) {
-                ctx.fillStyle = tileColors[levelGridData[y][x]];
+            } else if (tileColours[levelGridData[y][x]]) {
+                ctx.fillStyle = tileColours[levelGridData[y][x]];
                 ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
             }
         }
     }
 }
-
 drawGrid();
 
 function fillTile(event) {
@@ -67,8 +73,18 @@ function fillTile(event) {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    const col = Math.floor(x / tileSize);
-    const row = Math.floor(y / tileSize);
+    let col = Math.floor(x / tileSize);
+    let row = Math.floor(y / tileSize);
+
+    try {
+        levelGridData[row][col] = selectedTool;
+    } catch (error) {
+        if (error instanceof TypeError) {
+            console.log("rectified index out of range error")
+            row = row < 0 ? 0 : row > 15 ? 15 : row;
+            col = col < 0 ? 0 : col > 31 ? 31 : col;
+        }
+    }
 
     if (selectedTool === 3) {
         levelGridData[spawnY][spawnX] = 0;
@@ -80,11 +96,22 @@ function fillTile(event) {
         goalY = row;
     }
 
-    levelGridData[row][col] = selectedTool;
-    
-
     drawGrid();
 }
+
+window.onresize = function() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (w > h*2) {
+        scale = 2 * h / globalScale;
+    } else {
+        scale = w / globalScale;
+    }
+    canvas.width = scale * cols;
+    canvas.height = scale * rows;
+    tileSize = scale;
+    drawGrid();
+};
 
 canvas.addEventListener("mousedown", (event) => {
     mouseDown = true;
@@ -112,24 +139,6 @@ document.querySelectorAll(".tool-button").forEach(button => {
         console.log(`Switched to ${button.dataset.name}`);
     });
 });
-
-function saveLevel() {
-    const levelDataString = JSON.stringify(levelGridData);
-    const levelName = prompt("Enter a name for your level:", "level1.txt");
-
-    if (!levelName) {
-        alert("Level name cannot be empty. Using default name: level1.txt");
-        levelName = "level1.txt"; // Default name
-    }
-
-    const blob = new Blob([levelDataString], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = levelName;
-    link.click();
-}
-
-document.getElementById('SaveButton').addEventListener('click', saveLevel);
 
 document.getElementById("ResetButton").onclick = function() {
     document.querySelectorAll(".tool-button").forEach(btn => btn.classList.remove("active"));

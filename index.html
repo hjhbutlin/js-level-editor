@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
     <script src="mainMenu.js" defer></script>
     <script src="editor.js" defer></script>
+    <script src="savedLevels.js" defer></script>
+
 </head>
 <body>
     <!-- main menu -->
@@ -17,24 +19,29 @@
     </div>
 
     <!-- editor -->
-    <main id="editor" style="display:none;">
-        <h1>Editor</h1>
-        <canvas id="gameGrid"></canvas>
-        <button id="backButton" class="back-button">Back to Menu</button> <!-- Back to Menu button -->
-    </main>
+    <main id="editor" style="display: none;">
+        <div id="editorHeader">
+            <button id="backButton" class="back-button">Back to Menu</button>
+            <p class="page-title"><b>Editor</b></p>
+        </div>
 
-    <!-- editor toolbar -->
-    <fieldset id="toolbar" style="display:none;">
-        <legend>Tools</legend>
-        <button id="SpawnButton" class="tool-button" data-tool="3" data-name="spawn" aria-label="Set spawn point">Spawn</button>
-        <button id="GoalButton" class="tool-button" data-tool="4" data-name="goal" aria-label="Set goal point">Goal</button>
-        <button id="PlatformButton" class="tool-button" data-tool="1" data-name="platform" aria-label="Create platform">Platform</button>
-        <button id="SpikeButton" class="tool-button" data-tool="2" data-name="spike" aria-label="Place spike">Spike</button>
-        <button id="DeleteButton" class="tool-button" data-tool="0" data-name="delete" aria-label="Delete tile">Delete</button>
-        <button id="ResetButton" class="important-button" aria-label="Reset grid">Reset</button>
-        <button id="SaveButton" class="important-button" aria-label="Save level">Save</button>
-        <button id="LoadButton" class="important-button" aria-label="Load level">Load</button>
-    </fieldset>
+        <div id="canvasContainer">
+            <canvas id="gameGrid"></canvas>
+        </div>
+    
+        <!-- editor toolbar -->
+        <fieldset id="toolbar">
+            <legend>Tools</legend>
+            <button id="SpawnButton" class="tool-button" data-tool="3" data-name="spawn" aria-label="Set spawn point">Spawn</button>
+            <button id="GoalButton" class="tool-button" data-tool="4" data-name="goal" aria-label="Set goal point">Goal</button>
+            <button id="PlatformButton" class="tool-button" data-tool="1" data-name="platform" aria-label="Create platform">Platform</button>
+            <button id="SpikeButton" class="tool-button" data-tool="2" data-name="spike" aria-label="Place spike">Spike</button>
+            <button id="DeleteButton" class="tool-button" data-tool="0" data-name="delete" aria-label="Delete tile">Delete</button>
+            <button id="ResetButton" class="important-button" aria-label="Reset grid">Reset</button>
+            <button id="SaveButton" class="important-button" aria-label="Save level">Save</button>
+            <button id="LoadButton" class="important-button" aria-label="Load level">Load</button>
+        </fieldset>
+    </main>
 
     <noscript>
         <p>This application requires JavaScript to function properly.</p>

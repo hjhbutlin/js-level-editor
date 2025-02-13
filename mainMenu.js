@@ -4,5 +4,5 @@ document.getElementById("startEditor").addEventListener("click", () => {
     document.getElementById("editor").style.display = "block";
     document.getElementById("toolbar").style.display = "block";
     
-    console.log("Editor has started!");
+    console.log("launched editor");
 });
