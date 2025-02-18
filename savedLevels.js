@@ -26,7 +26,7 @@ function loadLevel() {
     }
 
     levelGridData = savedLevels.get(name);
-    drawGrid();
+    drawGrid(isEditMode);
 }
 
 document.getElementById('LoadButton').addEventListener('click', loadLevel);

@@ -11,6 +11,7 @@ canvas {
     background-color: lightblue;
     display: block;
     margin: auto;
+    margin-bottom: 3vh;
 }
 
 #menuButtons {
@@ -23,17 +24,19 @@ canvas {
 
 }
 
-#canvasContainer {
-    padding-bottom: 3vh;
-}
-
 #editor {
     gap: 1vh;
     position: relative; 
     width: 100%;
 }
 
-#editorHeader {
+#game {
+    gap: 1vh;
+    position: relative; 
+    width: 100%;
+}
+
+.page-header {
     display: flex;
     justify-content: center;
     align-items: center;
