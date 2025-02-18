@@ -26,7 +26,7 @@ function fillTile(event) {
         goalY = row;
     }
 
-    drawGrid(isEditMode);
+    drawGrid(mode);
 }
 
 canvas.addEventListener("mousedown", (event) => {
@@ -67,6 +67,6 @@ document.getElementById("ResetButton").onclick = function() {
     levelGridData[spawnY][spawnX] = 3;
     levelGridData[goalY][goalX] = 4;
     selectedTool = 0;
-    drawGrid(isEditMode);
+    drawGrid(mode);
     console.log("reset grid")
 }

@@ -1,4 +1,5 @@
-let isEditMode = false;
+let mode = 0; // 0 menu, 1 game, 2 editor
+console.log(mode);
 
 // CANVAS
 
@@ -45,7 +46,7 @@ function fillSpike(x,y,colour) {
 }
 
 
-function drawGrid(isEditMode) {
+function drawGrid(mode) {
     canvas.width = scale * cols;
     canvas.height = scale * rows;
     let tileSize = scale;
@@ -57,8 +58,7 @@ function drawGrid(isEditMode) {
     for (let y = 0; y < rows; y++) {
 
         for (let x = 0; x < cols; x++) {
-            if (isEditMode) {
-                console.log(true)
+            if (mode === 2) {
                 ctx.strokeStyle = "gray";
                 ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
             }
@@ -72,9 +72,9 @@ function drawGrid(isEditMode) {
             }
         }
     }
-    if (!isEditMode) {
+    if (mode === 1) {
         ctx.fillStyle = "azure";
-        ctx.fillRect(yourCoords[0] * tileSize, yourCoords[1] * tileSize, tileSize, tileSize);
+        ctx.fillRect(you.x * tileSize, you.y * tileSize, tileSize, tileSize);
     }
 }
 
@@ -90,7 +90,7 @@ window.onresize = function() {
     canvas.width = scale * cols;
     canvas.height = scale * rows;
     tileSize = scale;
-    drawGrid(isEditMode);
+    drawGrid(mode);
 };
 
 
@@ -98,20 +98,26 @@ window.onresize = function() {
 // MAIN MENU
 
 document.getElementById("startGame").addEventListener("click", () => {
+    mode = 1;
+    console.log(mode);
+
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
     document.querySelectorAll(".game").forEach(element => {element.style.display = "block"});
     console.log("launched game");
-
-    drawGrid(isEditMode);
+    loadGame();
+    drawGrid(mode);
 });
 
 document.getElementById("startEditor").addEventListener("click", () => {
-    isEditMode = true;
+    mode = 2;
+    console.log(mode);
+    levelGridData = Array(rows).fill().map(() => Array(cols).fill(0));
+
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
     document.querySelectorAll(".editor").forEach(element => {element.style.display = "block"});
     console.log("launched editor");
 
-    drawGrid(isEditMode);
+    drawGrid(mode);
 });
 
 
@@ -122,8 +128,13 @@ document.querySelectorAll(".back-button").forEach(button => {
         document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "grid"});
         document.querySelectorAll(".game").forEach(element => {element.style.display = "none"});
         document.querySelectorAll(".editor").forEach(element => {element.style.display = "none"});
-        console.log("launched game");
-        isEditMode = false;
+        mode = 0;
+        console.log(mode);
+        if (debugMenu.classList.contains("active")) {
+            debugMenu.style.display = "none";
+            debugMenu.classList.remove("active");
+        }
+
         console.log("relaunched menu");
     });
 });

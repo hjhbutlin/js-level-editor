@@ -113,3 +113,8 @@ button.active {
     transform: scale(0.9);
     transition-duration: 400ms;
 }
+
+
+#debugMenu {
+    font-size: 4vh;
+}
