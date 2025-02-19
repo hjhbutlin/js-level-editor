@@ -5,6 +5,7 @@ let ACCEL = 0.1;
 let GRAVITY = 0.1;
 let maxBaseSpeed = 0.4;
 let jumpStrength = 0.7;
+let timeScale = 40;
 
 let currentLevel = 1;
 let totalLevels = 2;
@@ -18,12 +19,18 @@ class player {
         this.y = y;
         this.vx = vx;
         this.vy = vy;
-        this.falling = false;
     }
 
-    move() {
-        this.x += this.vx;
-        this.y += this.vy;
+    refreshContacts() {
+        this.contactLeft = false;
+        this.contactRight = false;
+        this.contactTop = false;
+        this.contactBottom = false;
+    }
+
+    move(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
     }
 }
 
@@ -32,6 +39,7 @@ class player {
 // ####### GAME LOADY STUFF #######
 
 let you = new player(levelSpawn[0], levelSpawn[1], 0, 0);
+you.refreshContacts();
 
 function nextLevel() {
     currentLevel += 1;
@@ -49,12 +57,12 @@ function findIndex(arr, targetNum) {
 }
 
 function loadGame() {
-    levelGridData = savedLevels.get("level1");
+    levelGridData = savedLevels.get("level0");
     levelSpawn = findIndex(levelGridData, 3);
     you.x = levelSpawn[1];
     you.y = levelSpawn[0];
-    console.log(you.y);
-
+    lastTime = performance.now();
+    animationFrame = requestAnimationFrame(update);
 }
 
 function toggleDebugMenu() {
@@ -71,63 +79,189 @@ function toggleDebugMenu() {
 
 // ####### GAMEPLAY STUFF #######
 
-let isKeyDown = {a:false,d:false};
+let isKeyDown = {a:false,d:false,space:false};
 let animationFrame;
 
-function executeKeyboardInputs() {
+function executeKeyboardInputs(dt) {
+    const perfLimitedAccel = ACCEL * dt;
     if (!isKeyDown.a && !isKeyDown.d) {
         if (Math.abs(you.vx) > ACCEL) {
-            you.vx -= Math.sign(you.vx) * ACCEL;
+            you.vx -= Math.sign(you.vx) * perfLimitedAccel;
         } else {
             you.vx = 0;
         }
     }
 
     if (isKeyDown.a && you.vx > -maxBaseSpeed) {
-        you.vx -= ACCEL;
+        you.vx -= perfLimitedAccel;
+        you.contactLeft = false;
     }
     if (isKeyDown.d && you.vx < maxBaseSpeed) {
-        you.vx += ACCEL;
+        you.vx += perfLimitedAccel;
+        you.contactRight = false;
     }
+    if (isKeyDown.space && you.contactBottom) {
+        you.vy = -jumpStrength;
+        you.contactBottom = false;
+    }
+    you.move(dt);
+
 }
 
-function boundaryCheckAndResolve() {
-    if (you.x + you.vx <= 0) {
-        you.x = 0;
-        you.vx = 0;
-    } else if (you.x + you.vx >= cols-1) {
-        you.x = cols - 1;
-        you.vx = 0;
-    }
-
-    if (you.y + you.vy <= 0) {
-        you.y = 0;
-        you.vy = 0;
-    } else if (you.y + you.vy >= rows-1) {
-        you.y = rows - 1;
-        you.vy = 0;
-        you.falling = false;
-    }
+function canvasBoundaryCheckAndResolve() {
+    
 }
 
 function updateDebugMenu() {
-    document.getElementById("debugMenu").innerHTML = `x: ${you.x.toFixed(3)}<br>y: ${you.y.toFixed(3)}<br>vx: ${you.vx.toFixed(3)}<br>vy: ${you.vy.toFixed(3)}<br>falling: ${you.falling}`
+    document.getElementById("debugMenu").innerHTML = `x: ${you.x.toFixed(3)}<br>y: ${you.y.toFixed(3)}<br>vx: ${you.vx.toFixed(3)}<br>vy: ${you.vy.toFixed(3)}<br>contacts (LRTB): ${you.contactLeft} ${you.contactRight} ${you.contactTop} ${you.contactBottom}<br>time scale: ${timeScale}`;
 }
 
+function boundaryCheckAndResolve(dt) {
 
-function update() {
+    const nextX = you.x + you.vx * dt;
+    const nextY = you.y + you.vy * dt;
 
-    you.vy += GRAVITY;
+    function resolveX() {
+        you.x = Math.round(nextX);
+        you.vx = 0;
+    }
+    function resolveY() {
+        you.y = Math.round(nextY);
+        you.vy = 0;
+    }
+    
+    // left wall
+    if (nextX <= 0) {
+        resolveX();
+        you.contactLeft = true;
+    } else {
+        you.contactLeft = false;
+    }
+    // right wall
+    if (nextX >= cols - 1) {
+        resolveX();
+        you.contactRight = true;
+    } else {
+        you.contactRight = false;
+    }
 
-    executeKeyboardInputs();
+    // top wall
+    if (nextY <= 0) {
+        resolveY();
+        you.contactTop= true;
+    } else {
+        you.contactTop = false;
+    }
+    // bottom wall
+    if (nextY >= rows - 1) {
+        resolveY();
+        you.contactBottom = true;
+    } else {
+        you.contactBottom = false;
+    }
 
-    boundaryCheckAndResolve();
+    try {
+        
+        // bottom touching surface?
+        if (!you.contactBottom) {
 
-    //platformCheckAndResolve();
+            // bottom left |_
+            if (!you.contactLeft) {
+                if (levelGridData[Math.floor(nextY) + 1][Math.floor(nextX)] === 1) {
+                    resolveY();
+                    you.contactBottom = true;
+                }
+            }
+
+            // bottom right _|
+            if (!you.contactRight) {
+                if (levelGridData[Math.floor(nextY) + 1][Math.floor(nextX) + 1] === 1) {
+                    resolveY();
+                    you.contactBottom = true
+                }
+            }
+        }
+
+        // top touching surface?
+        if (!you.contactTop) {
+
+            // top left
+            if (!you.contactLeft) {
+                if (levelGridData[Math.floor(nextY)][Math.floor(nextX)] === 1) {
+                    resolveY();
+                    you.contactTop = true;
+                }
+            }
+
+            // top right
+            else if (!you.contactRight) {
+                if (levelGridData[Math.floor(nextY)][Math.floor(nextX) + 1] === 1) {
+                    resolveY();
+                    you.contactTop = true
+                }
+            }
+        }
+
+        // left touching surface?
+        if (!you.contactLeft) {
+
+            // top left
+            if (!you.contactTop) {
+                if (levelGridData[Math.floor(nextY)][Math.floor(nextX)] === 1) {
+                    resolveX();
+                    you.contactLeft = true;
+                }
+            }
+
+            // bottom left
+            if (!you.contactBottom) {
+                if (levelGridData[Math.floor(nextY) + 1][Math.floor(nextX)] === 1) {
+                    resolveX();
+                    you.contactLeft = true
+                }
+            }
+        }
+
+        // right touching surface?
+        if (!you.contactRight) {
+        
+            // bottom right
+            if (!you.contactBottom) {
+                if (levelGridData[Math.floor(nextY) + 1][Math.floor(nextX) + 1 ] === 1) {
+                    resolveX();
+                    you.contactRight = true;
+                }
+            }
+
+            // top right
+            if (!you.contactTop) {
+                if (levelGridData[Math.floor(nextY)][Math.floor(nextX) + 1] === 1) {
+                    resolveX();
+                    you.contactRight = true
+                }
+            }
+        }
+    } catch (error) {
+        console.log(nextX, nextY);
+        console.log(Math.floor(nextX) + 1)
+
+        throw(error);
+    }
+}
+
+function update(timestamp) {
+    let dt = timeScale * (timestamp - lastTime) / 1000;
+    lastTime = timestamp;
+    executeKeyboardInputs(dt);
+
+    boundaryCheckAndResolve(dt);
+
+    if (!you.contactBottom) {
+        you.vy += GRAVITY * dt;
+        you.contactTop = false;
+    }
 
     //hazardCheck();
-
-    you.move();
 
     animationFrame = requestAnimationFrame(update);
     drawGrid(mode);
@@ -136,39 +270,53 @@ function update() {
 }
 
 document.addEventListener("keydown", (KeyboardEvent) => {
-    if (mode === 1) {
-        switch (KeyboardEvent.key) {
-            case "d":
-                isKeyDown.d = true;
-                break;
+    switch (KeyboardEvent.key) {
+        case "d":
+            isKeyDown.d = true;
+            break;
 
-            case "a":
-                isKeyDown.a = true;
-                break;
+        case "a":
+            isKeyDown.a = true;
+            break;
 
-            case " ":
-                you.vy = -jumpStrength;
-                you.falling = true;
-                break;
-            
-            case "/":
-                toggleDebugMenu();
+        case " ":
+            KeyboardEvent.preventDefault();
+            isKeyDown.space = true;
+            break;
+        
+        case "/":
+            toggleDebugMenu();
+            break;
 
-            default:
-                break;
-        }
+        case "=":
+            timeScale += 4;
+            break;
+
+        case "-":
+            timeScale -= 4;
+            break;
+
+
+        default:
+            break;
     }
 });
 
 document.addEventListener("keyup", (KeyboardEvent) => {
-    if (mode === 1) {
-        if (KeyboardEvent.key === "a") {
-            isKeyDown.a = false;
-        }
-        if (KeyboardEvent.key === "d") {
-            isKeyDown.d = false;
-        }
-    }
-});
+    switch (KeyboardEvent.key) {
+            case "d":
+                isKeyDown.d = false;
+                break;
 
-animationFrame = requestAnimationFrame(update);
+            case "a":
+                isKeyDown.a = false;
+                break;
+
+            case (" "):
+                isKeyDown.space = false;
+                break;
+
+            default:
+                break;
+        }
+});
