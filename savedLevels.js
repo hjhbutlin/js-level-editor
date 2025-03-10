@@ -19,7 +19,7 @@ function saveLevel() {
 }
 document.getElementById('SaveButton').addEventListener('click', saveLevel);
 
-function loadLevel() {
+function loadUserLevel() {
     let name = prompt("Please enter level name.");
 
     while (!savedLevels.has(name)) {
@@ -27,7 +27,7 @@ function loadLevel() {
     }
 
     levelGridData = savedLevels.get(name);
-    drawGrid(isEditMode);
+    Canvas.instance.DrawGrid(mode, levelGridData);
 }
 
-document.getElementById('LoadButton').addEventListener('click', loadLevel);
+document.getElementById('LoadButton').addEventListener('click', loadUserLevel);
