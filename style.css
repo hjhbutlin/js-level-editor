@@ -114,6 +114,9 @@ button.active {
     transition-duration: 400ms;
 }
 
+#hotkeyText {
+    font-size: 3vh;
+}
 
 #debugMenu {
     font-size: 4vh;

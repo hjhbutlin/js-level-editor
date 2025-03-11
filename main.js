@@ -1,4 +1,11 @@
-let mode = 0; // 0 menu, 1 game, 2 editor
+// Modes
+const MENU_MODE = 0;
+const GAME_MODE = 1;
+const EDIT_MODE = 2;
+
+let gamePaused = false;
+
+let mode = MENU_MODE;
 console.log(mode);
 
 // Physics Constants
@@ -10,7 +17,7 @@ let timeScale = 40;
 const TERMINAL_V = 0.6;
 
 // Game Constants
-const MAX_LEVEL = 2;
+const MAX_LEVEL = 3;
 let currentLevel = 1;
 let totalLevels = 2;
 let levelSpawn= [0,0];
@@ -20,7 +27,22 @@ const debugMenu = document.getElementById("debugMenu");
 // Canvas Constants
 const ROWS = 16;
 const COLS = 32;
+const SPAWN_TOOL = 2;
+const GOAL_TOOL = 3;
+const SPIKE_BASE_NUMBER = 10;
 const GLOBAL_SCALE = 50;
+let spikeRotation = 0;
+const SPIKE_VERTICES = [
+    [0,1,0,0,1,0,1,1],
+    [1,1,0,1,0,0,1,0],
+    [0.5,0,1,0.5,0.5,1,0,0.5]
+];
+const SSBs = [ // spike solid blocks  left top width height, rotations 10 11 12 13
+    [5/12,0,1/6,1/2 , 1,5/12,1/2,1/6 , 5/12,1,1/6,1/2, 0,5/12,1/2,1/6], // top thin
+    [1/4,1/2,1/2,3/8 , 1/8,1/4,3/8,1/2 , 1/4,1/8,1/2,3/8 , 1/2,1/4,3/8,1/2], // middle middle
+    [0,7/8,1,1/8 , 0,0,1/8,1 , 0,0,1,1/8 , 7/8,0,1/8,1] // bottom fat
+];
+let fade = 1;
 
 // Editor/Game Grid Setup
 let levelGridData = Array(ROWS).fill().map(() => Array(COLS).fill(0));
@@ -29,8 +51,8 @@ let spawnY = ROWS-1;
 let goalY = ROWS-1;
 let goalX = COLS-1;
 
-levelGridData[spawnY][spawnX] = 3;
-levelGridData[goalY][goalX] = 4;
+levelGridData[spawnY][spawnX] = 2;
+levelGridData[goalY][goalX] = 3;
 
 let selectedTool = 0;
 let mouseDown = false;
@@ -39,10 +61,6 @@ let mouseDown = false;
 class Canvas {
 
     constructor(canvasID) {
-
-        if (Canvas.instance) {
-            return Canvas.instance;
-        }
 
         this.canvas = document.getElementById(canvasID);
         this.ctx = this.canvas.getContext("2d");
@@ -56,34 +74,29 @@ class Canvas {
 
         this.tileColours = {
             1: "darkred",       // platform
-            2: null,          // spike sold separately
-            3: "darkcyan",    // spawn
-            4: "darkgreen"      // goal
+            2: "darkcyan",          // spawn
+            3: "darkgreen",    // goal
         };
     }
 
-    static GetInstance() {
-        return CanvasTool.instance;
-    }
-
-    FillSpike(x,y,colour) {
+    fillSpike(x,y,colour,rotation) {
         this.ctx.beginPath();
-        this.ctx.moveTo(x * this.tileSize, y * this.tileSize + this.tileSize);
-        this.ctx.lineTo(x * this.tileSize + this.tileSize / 2, y * this.tileSize);
-        this.ctx.lineTo(x * this.tileSize + this.tileSize, y * this.tileSize + this.tileSize);
+        this.ctx.moveTo((x + SPIKE_VERTICES[0][2*rotation]) * this.tileSize, (y + SPIKE_VERTICES[0][2*rotation + 1]) * this.tileSize);
+        this.ctx.lineTo((x + SPIKE_VERTICES[1][2*rotation]) * this.tileSize, (y + SPIKE_VERTICES[1][2*rotation + 1]) * this.tileSize);
+        this.ctx.lineTo((x + SPIKE_VERTICES[2][2*rotation]) * this.tileSize, (y + SPIKE_VERTICES[2][2*rotation + 1]) * this.tileSize);
         this.ctx.closePath();
         this.ctx.fillStyle = colour;
         this.ctx.fill();
     }
 
-    DrawGrid(mode, gridData) {
+    drawGrid(mode, gridData) {
         this.canvas.width = this.scale * COLS;
         this.canvas.height = this.scale * ROWS;
         this.tileSize = this.scale;
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        gridData[spawnY][spawnX] = 3;
-        gridData[goalY][goalX] = 4;
+        gridData[spawnY][spawnX] = 2;
+        gridData[goalY][goalX] = 3;
     
         for (let y = 0; y < ROWS; y++) {
     
@@ -94,8 +107,8 @@ class Canvas {
                 }
                 
                 // handle spike case
-                if (gridData[y][x] === 2) {
-                    Canvas.instance.FillSpike(x, y, "red");
+                if (gridData[y][x] >= 10 && gridData[y][x] <= 13) {
+                    gameCanvas.fillSpike(x, y, "red",gridData[y][x]-SPIKE_BASE_NUMBER);
                 } else if (this.tileColours[gridData[y][x]]) {
                     this.ctx.fillStyle = this.tileColours[gridData[y][x]];
                     this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
@@ -103,27 +116,25 @@ class Canvas {
             }
         }
         if (mode === 1) {
-            this.ctx.fillStyle = "azure";
+            this.ctx.fillStyle = `rgba(240,255,255,${fade})`;
             this.ctx.fillRect(you.l * this.tileSize, you.t * this.tileSize, this.tileSize, this.tileSize);
         }
     }
 }
 
 window.onresize = function() {
-    let scale;
     const w = window.innerWidth;
     const h = window.innerHeight;
     if (w > h*2) {
-        scale = 2 * h / GLOBAL_SCALE;
+        gameCanvas.scale = 2 * h / GLOBAL_SCALE;
     } else {
-        scale = w / GLOBAL_SCALE;
+        gameCanvas.scale = w / GLOBAL_SCALE;
     }
-    Canvas.canvas.width = scale * COLS;
-    Canvas.canvas.height = scale * ROWS;
-    Canvas.instance.DrawGrid(mode, levelGridData);
+    
+    gameCanvas.drawGrid(mode, levelGridData);
 };
 
-class SolidBlock {
+class CanvasElement {
     constructor(l, t, w, h) { // (old) left right width height
         this.l = this.ol = l;
         this.r = this.or = l + w;
@@ -153,7 +164,7 @@ class SolidBlock {
     }
 }
 
-class Player extends SolidBlock {
+class Player extends CanvasElement {
     constructor(l, t, w, h) { // (old) left right width height
         super(l,t,w,h);
 
@@ -217,16 +228,23 @@ class Player extends SolidBlock {
         }
     }
 
+    checkHazard(s) {
+        return (this.l < s.r && this.r > s.l && this.t < s.b && this.b > s.t);
+    }
+
     checkGoalReached() {
         return (this.l < goalX + 1 && this.r > goalX && this.t < goalY + 1 && this.b > goalY);
     }
 }
 
 
+
+
 // Declarationnnn
 
-Canvas.instance = new Canvas("grid");
+let gameCanvas = new Canvas("grid");
 let blocks = [];
+let spikes = [];
 let you = new Player(levelSpawn[0], levelSpawn[1], 1, 1);
 
 
@@ -242,7 +260,7 @@ document.getElementById("startGame").addEventListener("click", () => {
     document.querySelectorAll(".game").forEach(element => {element.style.display = "block"});
     console.log("launched game");
     loadGame();
-    Canvas.instance.DrawGrid(mode,levelGridData);
+    gameCanvas.drawGrid(mode,levelGridData);
 });
 
 document.getElementById("startEditor").addEventListener("click", () => {
@@ -254,7 +272,7 @@ document.getElementById("startEditor").addEventListener("click", () => {
     document.querySelectorAll(".editor").forEach(element => {element.style.display = "block"});
     console.log("launched editor");
 
-    Canvas.instance.DrawGrid(mode, levelGridData);
+    gameCanvas.drawGrid(mode, levelGridData);
 });
 
 
@@ -283,15 +301,15 @@ document.querySelectorAll(".back-button").forEach(button => {
 // ###### EDITOR STUFF #######
 
 function fillTile(event) {
-    const rect = Canvas.instance.canvas.getBoundingClientRect();
+    const rect = gameCanvas.canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    let col = Math.floor(x / Canvas.instance.tileSize);
-    let row = Math.floor(y / Canvas.instance.tileSize);
+    let col = Math.floor(x / gameCanvas.tileSize);
+    let row = Math.floor(y / gameCanvas.tileSize);
 
     try {
-        levelGridData[row][col] = selectedTool;
+        levelGridData[row][col] = selectedTool + spikeRotation;
     } catch (error) {
         if (error instanceof TypeError) {
             console.log("rectified index out of range error")
@@ -300,31 +318,31 @@ function fillTile(event) {
         }
     }
 
-    if (selectedTool === 3) {
+    if (selectedTool === SPAWN_TOOL) {
         levelGridData[spawnY][spawnX] = 0;
         spawnX = col;
         spawnY = row;
-    } else if (selectedTool === 4) {
+    } else if (selectedTool === GOAL_TOOL) {
         levelGridData[goalY][goalX] = 0;
         goalX = col;
         goalY = row;
     }
 
-    Canvas.instance.DrawGrid(mode, levelGridData);
+    gameCanvas.drawGrid(mode, levelGridData);
 }
 
-Canvas.instance.canvas.addEventListener("mousedown", (event) => {
+gameCanvas.canvas.addEventListener("mousedown", (event) => {
     mouseDown = true;
     fillTile(event);
 });
 
-Canvas.instance.canvas.addEventListener("mousemove", (event) => {
+gameCanvas.canvas.addEventListener("mousemove", (event) => {
     if (mouseDown) {
     fillTile(event);
     }
 });
 
-Canvas.instance.canvas.addEventListener("mouseup", (event) => {
+gameCanvas.canvas.addEventListener("mouseup", (event) => {
     mouseDown = false;
 });
 
@@ -333,6 +351,8 @@ document.querySelectorAll(".tool-button").forEach(button => {
     button.addEventListener("click", () => {
         selectedTool = Number(button.dataset.tool);
         
+        spikeRotation = 0;
+
         document.querySelectorAll(".tool-button").forEach(btn => { btn.classList.remove("active")});
 
         button.classList.add("active");
@@ -348,10 +368,10 @@ document.getElementById("ResetButton").onclick = function() {
     spawnY = ROWS-1;
     goalY = ROWS-1;
     goalX = COLS-1;
-    levelGridData[spawnY][spawnX] = 3;
-    levelGridData[goalY][goalX] = 4;
+    levelGridData[spawnY][spawnX] = 2;
+    levelGridData[goalY][goalX] = 3;
     selectedTool = 0;
-    Canvas.instance.DrawGrid(mode, levelGridData);
+    gameCanvas.drawGrid(mode, levelGridData);
     console.log("reset grid")
 }
 
@@ -362,8 +382,8 @@ document.getElementById("ResetButton").onclick = function() {
 
  
 function convertGridToBlocks(gridData) {
-    let output = [];
     let paddedGridData = Array(ROWS+2).fill().map(() => Array(COLS+2).fill(1));
+    let rotation = 0;
 
     for (let i = 0; i < ROWS; i++) {
         for (let j = 0; j < COLS; j++) {
@@ -375,19 +395,25 @@ function convertGridToBlocks(gridData) {
         for (let j=1; j<COLS+1; j++) {
             if (paddedGridData[i][j] === 1) {
 
-                let s = new SolidBlock(j-1,i-1,1,1)
+                let s = new CanvasElement(j-1,i-1,1,1)
 
-                if (paddedGridData[i+1][j] === 1) { s.spaceDown = false; }
-                if (paddedGridData[i-1][j] === 1) { s.spaceUp = false; }
-                if (paddedGridData[i][j+1] === 1) { s.spaceRight = false; }
-                if (paddedGridData[i][j-1] === 1) { s.spaceLeft = false; }
+                s.spaceDown = !(paddedGridData[i+1][j] === 1);
+                s.spaceUp = !(paddedGridData[i-1][j] == 1);
+                s.spaceRight = !(paddedGridData[i][j+1] == 1);
+                s.spaceLeft = !(paddedGridData[i][j-1] == 1);
 
-                output.push(s);
+                blocks.push(s);
+
+            } else if (paddedGridData[i][j] >= 10 && paddedGridData[i][j] <= 13) {
+                rotation = paddedGridData[i][j] - 10;
+
+                for (let k=0; k<3; k++) {
+                    spikes.push(new CanvasElement(j-1 + SSBs[k][rotation*4], i-1 + SSBs[k][rotation*4 + 1],SSBs[k][rotation*4 + 2],SSBs[k][rotation*4 + 3]))
+                }
+
             }
         }
     }
-    
-    return output;
 }
 
 function loadLevel(level) {
@@ -400,12 +426,46 @@ function loadLevel(level) {
     levelGridData = savedLevels.get(`level${currentLevel}`);
     document.getElementById("levelTitle").innerHTML = `<b>Level ${currentLevel}</b>`
 
-    levelSpawn = findIndex(levelGridData, 3);
+    levelSpawn = findIndex(levelGridData, 2);
 
     you.setLeft(levelSpawn[1]);
     you.setTop(levelSpawn[0]);
 
-    blocks = convertGridToBlocks(levelGridData);
+    blocks = [];
+    spikes = [];
+
+    convertGridToBlocks(levelGridData);
+}
+
+function respawn() {
+
+    gamePaused = true;
+
+    for (let t=100;t<501;t+=50) {
+        setTimeout(() => {
+            fade -= 0.1;
+        },t);
+    }
+    setTimeout(() => {
+        you.setLeft(levelSpawn[1]);
+        you.setTop(levelSpawn[0]);
+        you.vx = 0;
+        you.vy = 0;
+    },500);
+
+    for (let t=550;t<1001;t+=50) {
+        setTimeout(() => {
+            fade += 0.1;
+        },t);
+    }
+
+    setTimeout(() => {
+        gamePaused = false;
+        console.log("respawned");
+        fade = 1;
+    },1000);
+
+    
 }
 
 function findIndex(arr, targetNum) {
@@ -476,6 +536,8 @@ function update(timestamp) {
     let dt = timeScale * (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
+    if (!gamePaused) {
+
     executeKeyboardInputs(dt);
 
     you.move(dt);
@@ -492,14 +554,18 @@ function update(timestamp) {
     if (you.checkGoalReached()) {
         loadLevel(currentLevel + 1);
     }
+    
+    // hazard check
+    if (spikes.some(spike => { return you.checkHazard(spike)})) {
+        respawn();
+    }
 
-    //hazardCheck();
-
+    }
     animationFrame = requestAnimationFrame(update);
-    Canvas.instance.DrawGrid(mode, levelGridData);
+    gameCanvas.drawGrid(mode, levelGridData);
 
-    //Canvas.instance.ctx.fillStyle = "green";
-    //blocks.forEach(block => {Canvas.instance.ctx.fillRect(block.l*Canvas.instance.tileSize ,block.t*Canvas.instance.tileSize,3,3);});
+    //gameCanvas.ctx.fillStyle = "green";
+    //blocks.forEach(block => {gameCanvas.ctx.fillRect(block.l*gameCanvas.tileSize ,block.t*gameCanvas.tileSize,3,3);});
 
     updateDebugMenu();
 }
@@ -529,6 +595,18 @@ document.addEventListener("keydown", (KeyboardEvent) => {
 
         case "-":
             timeScale -= 4;
+            break;
+
+        case "e":
+            if (mode === EDIT_MODE && selectedTool === SPIKE_BASE_NUMBER) {
+                spikeRotation = (spikeRotation + 1) % 4;
+            }
+            break;
+
+        case "q":
+            if (mode === EDIT_MODE && selectedTool === SPIKE_BASE_NUMBER) {
+                spikeRotation = (spikeRotation - 1) % 4;
+            }
             break;
 
 

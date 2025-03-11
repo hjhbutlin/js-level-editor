@@ -45,15 +45,19 @@
     <!-- editor toolbar -->
     <fieldset id="toolbar" class="editor" style="display: none;">
         <legend>Tools</legend>
-        <button id="SpawnButton" class="tool-button" data-tool="3" data-name="spawn" aria-label="Set spawn point">Spawn</button>
-        <button id="GoalButton" class="tool-button" data-tool="4" data-name="goal" aria-label="Set goal point">Goal</button>
+        <button id="SpawnButton" class="tool-button" data-tool="2" data-name="spawn" aria-label="Set spawn point">Spawn</button>
+        <button id="GoalButton" class="tool-button" data-tool="3" data-name="goal" aria-label="Set goal point">Goal</button>
         <button id="PlatformButton" class="tool-button" data-tool="1" data-name="platform" aria-label="Create platform">Platform</button>
-        <button id="SpikeButton" class="tool-button" data-tool="2" data-name="spike" aria-label="Place spike">Spike</button>
+        <button id="SpikeButton" class="tool-button" data-tool="10" data-name="spike" aria-label="Place spike">Spike</button>
         <button id="DeleteButton" class="tool-button" data-tool="0" data-name="delete" aria-label="Delete tile">Delete</button>
         <button id="ResetButton" class="important-button" aria-label="Reset grid">Reset</button>
         <button id="SaveButton" class="important-button" aria-label="Save level">Save</button>
         <button id="LoadButton" class="important-button" aria-label="Load level">Load</button>
     </fieldset>
+
+    <div id="hotkeyHelper" class="editor" style="display: none;">
+        <p id="hotkeyText">(use <i>q</i> & <i>e</i> to rotate an item 90°)</p>
+    </div>
 
     <noscript>
         <p>This application requires JavaScript to function properly.</p>
