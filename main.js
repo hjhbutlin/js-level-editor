@@ -3,6 +3,8 @@ const MENU_MODE = 0;
 const GAME_MODE = 1;
 const EDIT_MODE = 2;
 
+let test = false;
+
 let gamePaused = false;
 
 let mode = MENU_MODE;
@@ -11,7 +13,7 @@ console.log(mode);
 // Physics Constants
 let ACCEL = 0.1;
 let GRAVITY = 0.1;
-let maxBaseSpeed = 0.4;
+let maxBaseSpeed = 0.3;
 let jumpStrength = 0.7;
 let timeScale = 40;
 const TERMINAL_V = 0.6;
@@ -29,8 +31,10 @@ const ROWS = 16;
 const COLS = 32;
 const SPAWN_TOOL = 2;
 const GOAL_TOOL = 3;
+const SELECTION_TOOL = 4;
 const SPIKE_BASE_NUMBER = 10;
 const GLOBAL_SCALE = 50;
+const PREVEIW_SCALE = 2;
 let spikeRotation = 0;
 const SPIKE_VERTICES = [
     [0,1,0,0,1,0,1,1],
@@ -46,13 +50,15 @@ let fade = 1;
 
 // Editor/Game Grid Setup
 let levelGridData = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+
 let spawnX = 0;
 let spawnY = ROWS-1;
 let goalY = ROWS-1;
 let goalX = COLS-1;
-
 levelGridData[spawnY][spawnX] = 2;
 levelGridData[goalY][goalX] = 3;
+
+
 
 let selectedTool = 0;
 let mouseDown = false;
@@ -60,21 +66,23 @@ let mouseDown = false;
 
 class Canvas {
 
-    constructor(canvasID) {
+    constructor(canvasID, cols, rows, canvasScale) {
 
         this.canvas = document.getElementById(canvasID);
         this.ctx = this.canvas.getContext("2d");
 
-        this.scale = window.innerWidth / GLOBAL_SCALE;
+        this.scale = window.innerWidth / canvasScale;
+        this.cols = cols;
+        this.rows =  rows;
 
-        this.canvas.width = this.scale * COLS;
-        this.canvas.height = this.scale * ROWS;
+        this.canvas.width = this.scale * cols;
+        this.canvas.height = this.scale * rows;
 
         this.tileSize = this.scale;
 
         this.tileColours = {
             1: "darkred",       // platform
-            2: "darkcyan",          // spawn
+            2: "darkcyan",      // spawn
             3: "darkgreen",    // goal
         };
     }
@@ -90,17 +98,17 @@ class Canvas {
     }
 
     drawGrid(mode, gridData) {
-        this.canvas.width = this.scale * COLS;
-        this.canvas.height = this.scale * ROWS;
+        this.canvas.width = this.scale * this.cols;
+        this.canvas.height = this.scale * this.rows;
         this.tileSize = this.scale;
 
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        gridData[spawnY][spawnX] = 2;
-        gridData[goalY][goalX] = 3;
+        // gridData[spawnY][spawnX] = 2;
+        // gridData[goalY][goalX] = 3;
     
-        for (let y = 0; y < ROWS; y++) {
+        for (let y = 0; y < this.rows; y++) {
     
-            for (let x = 0; x < COLS; x++) {
+            for (let x = 0; x < this.cols; x++) {
                 if (mode === 2) {
                     this.ctx.strokeStyle = "gray";
                     this.ctx.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
@@ -108,7 +116,7 @@ class Canvas {
                 
                 // handle spike case
                 if (gridData[y][x] >= 10 && gridData[y][x] <= 13) {
-                    gameCanvas.fillSpike(x, y, "red",gridData[y][x]-SPIKE_BASE_NUMBER);
+                    this.fillSpike(x, y, "red",gridData[y][x]-SPIKE_BASE_NUMBER);
                 } else if (this.tileColours[gridData[y][x]]) {
                     this.ctx.fillStyle = this.tileColours[gridData[y][x]];
                     this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
@@ -127,10 +135,13 @@ window.onresize = function() {
     const h = window.innerHeight;
     if (w > h*2) {
         gameCanvas.scale = 2 * h / GLOBAL_SCALE;
+        previewCanvas.scale = 2 * h / GLOBAL_SCALE * PREVEIW_SCALE;
     } else {
         gameCanvas.scale = w / GLOBAL_SCALE;
+        previewCanvas.scale = w / GLOBAL_SCALE * PREVEIW_SCALE;
+
     }
-    
+    previewCanvas.drawGrid(2, previewArray(selectedTool));
     gameCanvas.drawGrid(mode, levelGridData);
 };
 
@@ -242,10 +253,14 @@ class Player extends CanvasElement {
 
 // Declarationnnn
 
-let gameCanvas = new Canvas("grid");
+function previewArray(tool) {return [[0,0,0],[0,tool,0],[0,0,0]];}
+
+let gameCanvas = new Canvas("grid",COLS,ROWS,GLOBAL_SCALE);
 let blocks = [];
 let spikes = [];
 let you = new Player(levelSpawn[0], levelSpawn[1], 1, 1);
+
+let previewCanvas = new Canvas("preview",3,3,GLOBAL_SCALE/PREVEIW_SCALE);
 
 
 
@@ -257,9 +272,9 @@ document.getElementById("startGame").addEventListener("click", () => {
     console.log(mode);
 
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
-    document.querySelectorAll(".game").forEach(element => {element.style.display = "block"});
+    document.querySelectorAll(".game").forEach(element => {element.style.display = "flex"});
     console.log("launched game");
-    loadGame();
+    loadGame(false);
     gameCanvas.drawGrid(mode,levelGridData);
 });
 
@@ -269,10 +284,15 @@ document.getElementById("startEditor").addEventListener("click", () => {
     levelGridData = Array(ROWS).fill().map(() => Array(COLS).fill(0));
 
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
-    document.querySelectorAll(".editor").forEach(element => {element.style.display = "block"});
+    document.querySelectorAll(".editor").forEach(element => {element.style.display = "flex"});
     console.log("launched editor");
 
+    levelGridData[spawnY][spawnX] = 2;
+    levelGridData[goalY][goalX] = 3;
+    selectedTool = 0;
+
     gameCanvas.drawGrid(mode, levelGridData);
+    previewCanvas.drawGrid(2, previewArray(selectedTool));
 });
 
 
@@ -350,7 +370,16 @@ gameCanvas.canvas.addEventListener("mouseup", (event) => {
 document.querySelectorAll(".tool-button").forEach(button => {
     button.addEventListener("click", () => {
         selectedTool = Number(button.dataset.tool);
-        
+        previewCanvas.drawGrid(2, previewArray(selectedTool));
+
+        if (selectedTool === 10) {
+            document.getElementById("RotateButton").classList.remove("button-disabled");
+            document.getElementById("RotateButton").classList.add("button-enabled");
+        } else {
+            document.getElementById("RotateButton").classList.add("button-disabled");
+            document.getElementById("RotateButton").classList.remove("button-enabled");
+        }
+
         spikeRotation = 0;
 
         document.querySelectorAll(".tool-button").forEach(btn => { btn.classList.remove("active")});
@@ -361,8 +390,16 @@ document.querySelectorAll(".tool-button").forEach(button => {
     });
 });
 
+document.getElementById("RotateButton").onclick = function() {
+    if (selectedTool === 10) {
+        spikeRotation = (spikeRotation + 1 ) % 4;
+        previewCanvas.drawGrid(2, previewArray(selectedTool + spikeRotation));
+    }
+}
+
 document.getElementById("ResetButton").onclick = function() {
-    document.querySelectorAll(".tool-button").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll("button").forEach(btn => btn.classList.remove("active"));
+    document.querySelectorAll(".side-button").forEach(btn => {btn.classList.remove("button-enabled"); btn.classList.add("button-disabled");});
     levelGridData = Array(ROWS).fill().map(() => Array(COLS).fill(0));
     spawnX = 0;
     spawnY = ROWS-1;
@@ -371,11 +408,28 @@ document.getElementById("ResetButton").onclick = function() {
     levelGridData[spawnY][spawnX] = 2;
     levelGridData[goalY][goalX] = 3;
     selectedTool = 0;
+    spikeRotation = 0;
+    previewCanvas.drawGrid(2, previewArray(selectedTool));
     gameCanvas.drawGrid(mode, levelGridData);
     console.log("reset grid")
 }
 
+document.getElementById("testLevelButton").onclick = function() {
+    document.getElementById("toolbar").style.display = "none";
+    document.getElementById("secondaryButtons").style.display = "none";
+    document.getElementById("previewContainer").style.display = "none";
+    document.getElementById("testLevelButton").style.display = "none";
+    document.getElementById("endTestButton").style.display = "flex";
 
+    test = true;
+    mode = 1;
+    loadGame(true);
+}
+
+document.getElementById("endTestButton").onclick = function() {
+    endTest();
+    gameCanvas.drawGrid(mode, levelGridData);
+}
 
 
 // ####### GAME LOADY STUFF #######
@@ -416,16 +470,17 @@ function convertGridToBlocks(gridData) {
     }
 }
 
-function loadLevel(level) {
-    console.log(`loaded level ${level}`);
-    if (level === MAX_LEVEL + 1) {
-        return;
+function loadLevel(test, level) {
+    if (!test) {
+        console.log(`loaded level ${level}`);
+        if (level === MAX_LEVEL + 1) {
+            return;
+        }
+        currentLevel = level;
+
+        levelGridData = savedLevels.get(`level${currentLevel}`);
+        document.getElementById("levelTitle").innerHTML = `<b>Level ${currentLevel}</b>`
     }
-    currentLevel = level;
-
-    levelGridData = savedLevels.get(`level${currentLevel}`);
-    document.getElementById("levelTitle").innerHTML = `<b>Level ${currentLevel}</b>`
-
     levelSpawn = findIndex(levelGridData, 2);
 
     you.setLeft(levelSpawn[1]);
@@ -478,9 +533,12 @@ function findIndex(arr, targetNum) {
     throw `failed to find ${targetNum} in level data`;
 }
 
-function loadGame() {
-
-    loadLevel(1);
+function loadGame(test) {
+    if (!test) {
+        loadLevel(false, 1);
+    } else {
+        loadLevel(true, levelGridData);
+    }
 
     lastTime = performance.now();
     animationFrame = requestAnimationFrame(update);
@@ -496,7 +554,19 @@ function toggleDebugMenu() {
     debugMenu.classList.add("active");
 }
 
+function endTest() {
+    cancelAnimationFrame(animationFrame);
+    mode = 2;
+    test = false;
+    document.getElementById("toolbar").style.display = "flex";
+    document.getElementById("secondaryButtons").style.display = "flex";
+    document.getElementById("previewContainer").style.display = "flex";
+    document.getElementById("testLevelButton").style.display = "flex";
+    document.getElementById("endTestButton").style.display = "none";
 
+    you.vx = 0;
+    you.vy = 0;
+}
 
 
 
@@ -552,7 +622,11 @@ function update(timestamp) {
     blocks.forEach( block => {you.checkAndResolveBlockCollision(block)});
 
     if (you.checkGoalReached()) {
-        loadLevel(currentLevel + 1);
+        if (test) {
+            endTest();
+        } else {
+            loadLevel(false, currentLevel + 1);
+        }
     }
     
     // hazard check
@@ -561,7 +635,9 @@ function update(timestamp) {
     }
 
     }
-    animationFrame = requestAnimationFrame(update);
+    if (mode !== 2) {
+        animationFrame = requestAnimationFrame(update);
+    }
     gameCanvas.drawGrid(mode, levelGridData);
 
     //gameCanvas.ctx.fillStyle = "green";
@@ -596,18 +672,7 @@ document.addEventListener("keydown", (KeyboardEvent) => {
         case "-":
             timeScale -= 4;
             break;
-
-        case "e":
-            if (mode === EDIT_MODE && selectedTool === SPIKE_BASE_NUMBER) {
-                spikeRotation = (spikeRotation + 1) % 4;
-            }
-            break;
-
-        case "q":
-            if (mode === EDIT_MODE && selectedTool === SPIKE_BASE_NUMBER) {
-                spikeRotation = (spikeRotation - 1) % 4;
-            }
-            break;
+    
 
 
         default:

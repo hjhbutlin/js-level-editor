@@ -21,20 +21,29 @@
     </div>
 
 
-    <!-- game header -->
-    <div id="gameHeader" class="game page-header" style="display: none;">
+    <!-- game/editor header -->
+    <div id="gameHeader" class="game editor page-header" style="display: none;">
         <button id="gameToMenu" class="back-button">Back to Menu</button>
         <p id="levelTitle" class="page-title"><b>Level 1</b></p>
+        <button id="testLevelButton" class="test important-button">Test Level</button>
+        <button id="endTestButton" style="display: none" class="test important-button">Back to Editor</button>
+
     </div>
 
-    <!-- editor header -->
-    <div id="pageHeader" class="editor page-header" style="display: none;">
-        <button id="editorToMenu" class="back-button">Back to Menu</button>
-        <p class="page-title"><b>Editor</b></p>
+    <div id="previewContainer" style="display: none" class="editor canvas-preview">
+        <p id="previewTitle">preview</p>
+        <canvas id="preview"></canvas>
     </div>
 
-    <div id="canvasContainer" style="display: none;" class="editor game">
+
+    <div id="canvasContainer" style="display: none" class="editor game">
         <canvas id="grid"></canvas>
+    </div>
+
+    <div id="secondaryButtons" style="display: none" class="editor button-panel">
+        <button id="RotateButton" class="side-button button-disabled editor-button" aria-label="Rotate Clockwise">Rotate</button>
+        <button id="FlipButton" class="side-button button-disabled editor-button" aria-label="Flip">Flip</button>
+        <button id="MirrorButton" class="side-button button-disabled editor-button" aria-label="Mirror">Mirror</button>
     </div>
 
     <!-- game debug -->
@@ -45,19 +54,15 @@
     <!-- editor toolbar -->
     <fieldset id="toolbar" class="editor" style="display: none;">
         <legend>Tools</legend>
-        <button id="SpawnButton" class="tool-button" data-tool="2" data-name="spawn" aria-label="Set spawn point">Spawn</button>
-        <button id="GoalButton" class="tool-button" data-tool="3" data-name="goal" aria-label="Set goal point">Goal</button>
-        <button id="PlatformButton" class="tool-button" data-tool="1" data-name="platform" aria-label="Create platform">Platform</button>
-        <button id="SpikeButton" class="tool-button" data-tool="10" data-name="spike" aria-label="Place spike">Spike</button>
-        <button id="DeleteButton" class="tool-button" data-tool="0" data-name="delete" aria-label="Delete tile">Delete</button>
-        <button id="ResetButton" class="important-button" aria-label="Reset grid">Reset</button>
-        <button id="SaveButton" class="important-button" aria-label="Save level">Save</button>
-        <button id="LoadButton" class="important-button" aria-label="Load level">Load</button>
+        <button id="SpawnButton" class="tool-button button-enabled editor-button" data-tool="2" data-name="spawn" aria-label="Set spawn point">Spawn</button>
+        <button id="GoalButton" class="tool-button button-enabled editor-button" data-tool="3" data-name="goal" aria-label="Set goal point">Goal</button>
+        <button id="PlatformButton" class="tool-button button-enabled editor-button" data-tool="1" data-name="platform" aria-label="Create platform">Platform</button>
+        <button id="SpikeButton" class="tool-button button-enabled editor-button" data-tool="10" data-name="spike" aria-label="Place spike">Spike</button>
+        <button id="DeleteButton" class="tool-button button-enabled editor-button" data-tool="0" data-name="delete" aria-label="Delete tile">Delete</button>
+        <button id="ResetButton" class="important-button button-enabled editor-button" aria-label="Reset grid">Reset</button>
+        <button id="SaveButton" class="important-button button-enabled editor-button" aria-label="Save level">Save</button>
+        <button id="LoadButton" class="important-button button-enabled editor-button" aria-label="Load level">Load</button>
     </fieldset>
-
-    <div id="hotkeyHelper" class="editor" style="display: none;">
-        <p id="hotkeyText">(use <i>q</i> & <i>e</i> to rotate an item 90°)</p>
-    </div>
 
     <noscript>
         <p>This application requires JavaScript to function properly.</p>

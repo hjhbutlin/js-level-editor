@@ -6,24 +6,6 @@ body {
     background-color: cadetblue;
 }
 
-canvas {
-    border: 0.5vh solid black;
-    background-color: lightblue;
-    display: block;
-    margin: auto;
-    margin-bottom: 3vh;
-}
-
-#menuButtons {
-    min-width: none;
-    width: 20vw;
-    margin: auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 2vh;
-
-}
-
 #editor {
     gap: 1vh;
     position: relative; 
@@ -35,6 +17,7 @@ canvas {
     position: relative; 
     width: 100%;
 }
+
 
 .page-header {
     display: flex;
@@ -48,12 +31,6 @@ canvas {
     top: 0;
 }
 
-.back-button {
-    position: absolute;
-    left: 0;
-    top: 0;
-}
-
 p {
     display: block;
     margin-block-start: 0;
@@ -62,11 +39,79 @@ p {
     margin-inline-end: 0;
 }
 
+.back-button {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+button.test {
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+#canvasContainer {
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    border: 0.5vh solid black;
+    background-color: lightblue;
+    display: block;
+    margin-bottom: 3vh;
+}
+
+
+#secondaryButtons {
+    display: flex;
+    flex-direction: column;
+    gap: 1vh;
+    margin-left: 2vw; 
+    position: absolute;
+    right: 4vw;
+    top: 35%;
+}
+
+#previewContainer {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    left: 4vw;
+    top: 30%;
+}
+#previewTitle {
+    font-size: 4vh;
+    margin-bottom: 1vh;
+}
+
+.tool-button {
+    gap: 1vw;
+}
+
+.side-button {
+    padding: 1vw;
+    font-size: 3vh;
+}
+
+
+#menuButtons {
+    min-width: none;
+    width: 20vw;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2vh;
+}
+
 #toolbar {
     margin: auto;
+    justify-content: center;
     align-items: center;
     border: none;
-    padding-top:0vh
+    padding-top:0vh;
+    gap: 1vw;
 }
 
 legend {
@@ -84,20 +129,38 @@ button {
     text-decoration: none;
     display: inline-block;
     font-size: clamp(1rem, 1vw + 2vh, 5rem);
-}
+    transition-duration: 400ms;
 
-button.important-button {
-    background-color: #036742;
-}
 
+}
 
 button.tool-button {
     background-color: #04AA6D;
 }
 
+button.button-enabled {
+    background-color: #04AA6D;
+}
+button.important-button {
+    background-color: #036742;
+}
+
+button.button-disabled {
+    background-color: rgba(100,150,100,0.5);
+    color: rgba(200,220,200,0.5);
+}
+button.button-disabled:hover {
+    transform: none;
+    scale: none;
+}
+button.button-disabled:active {
+    background-color: rgba(100,150,100,0.5);
+}
+
 
 button:hover {
-    background-color: #2aa478;
+    scale: 1.1;
+    transform: rotate(5deg);
     transition-duration: 400ms;
 }
 
@@ -114,10 +177,9 @@ button.active {
     transition-duration: 400ms;
 }
 
-#hotkeyText {
-    font-size: 3vh;
-}
+
 
 #debugMenu {
     font-size: 4vh;
 }
+

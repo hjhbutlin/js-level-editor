@@ -12,23 +12,25 @@ function saveLevel() {
     console.log(JSON.stringify(levelGridData));
     let name = prompt("Please enter level name.");
 
-    while (savedLevels.has(name)) {
+    while (savedLevels.has(name) && name !== null) {
         name = prompt("Name taken. Please re-enter level name.");
     }
-
-    savedLevels.set(name,levelGridData);
+    if (name !== null) {
+        savedLevels.set(name,levelGridData);
+    }
 }
 document.getElementById('SaveButton').addEventListener('click', saveLevel);
 
 function loadUserLevel() {
     let name = prompt("Please enter level name.");
 
-    while (!savedLevels.has(name)) {
-        name = prompt("Name not found. Please re-enter level name.");
+    while (!savedLevels.has(name) && name !== null) {
+        name = prompt(`${name} not found. Please re-enter level name.`);
     }
-
-    levelGridData = savedLevels.get(name);
-    Canvas.instance.drawGrid(mode, levelGridData);
+    if (name !== null) {
+        levelGridData = savedLevels.get(name);
+        gameCanvas.drawGrid(mode, levelGridData);
+    }
 }
 
 document.getElementById('LoadButton').addEventListener('click', loadUserLevel);
