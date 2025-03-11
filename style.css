@@ -180,6 +180,17 @@ button.active {
 
 
 #debugMenu {
+    position: absolute;
+    left: 4vw;
+    height: 50%;
+    font-size: 4vh;
+}
+
+#tips {
+    margin-top: 5vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-size: 4vh;
 }
 

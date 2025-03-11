@@ -35,6 +35,11 @@
         <canvas id="preview"></canvas>
     </div>
 
+    <!-- game debug -->
+    <div id="debugMenu" style="display: none;">
+        <p id="debugText">debug menu default text</p>
+    </div>
+
 
     <div id="canvasContainer" style="display: none" class="editor game">
         <canvas id="grid"></canvas>
@@ -44,11 +49,6 @@
         <button id="RotateButton" class="side-button button-disabled editor-button" aria-label="Rotate Clockwise">Rotate</button>
         <button id="FlipButton" class="side-button button-disabled editor-button" aria-label="Flip">Flip</button>
         <button id="MirrorButton" class="side-button button-disabled editor-button" aria-label="Mirror">Mirror</button>
-    </div>
-
-    <!-- game debug -->
-    <div id="debugMenu" style="display: none;">
-        <p id="debugText">debug menu default text</p>
     </div>
 
     <!-- editor toolbar -->
@@ -63,6 +63,10 @@
         <button id="SaveButton" class="important-button button-enabled editor-button" aria-label="Save level">Save</button>
         <button id="LoadButton" class="important-button button-enabled editor-button" aria-label="Load level">Load</button>
     </fieldset>
+
+    <div id="tips" style="display: none" class="game">
+        <p id="tipsText">default tip</p>
+    </div>
 
     <noscript>
         <p>This application requires JavaScript to function properly.</p>

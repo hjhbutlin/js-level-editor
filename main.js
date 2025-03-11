@@ -17,6 +17,12 @@ let maxBaseSpeed = 0.3;
 let jumpStrength = 0.7;
 let timeScale = 40;
 const TERMINAL_V = 0.6;
+const DASH_SPEED_SCALE = 1;
+const MAX_DASH_TIME = 4;
+let dashing = false;
+let dashTimer;
+let dashDirection = 1;
+let canDash = true;
 
 // Game Constants
 const MAX_LEVEL = 3;
@@ -273,6 +279,7 @@ document.getElementById("startGame").addEventListener("click", () => {
 
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
     document.querySelectorAll(".game").forEach(element => {element.style.display = "flex"});
+    document.querySelectorAll(".test").forEach(element => {element.style.display = "none"});
     console.log("launched game");
     loadGame(false);
     gameCanvas.drawGrid(mode,levelGridData);
@@ -286,6 +293,8 @@ document.getElementById("startEditor").addEventListener("click", () => {
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
     document.querySelectorAll(".editor").forEach(element => {element.style.display = "flex"});
     console.log("launched editor");
+    document.getElementById("levelTitle").innerHTML = `<b>Editor</b>`
+
 
     levelGridData[spawnY][spawnX] = 2;
     levelGridData[goalY][goalX] = 3;
@@ -480,6 +489,8 @@ function loadLevel(test, level) {
 
         levelGridData = savedLevels.get(`level${currentLevel}`);
         document.getElementById("levelTitle").innerHTML = `<b>Level ${currentLevel}</b>`
+        document.getElementById("tipsText").innerHTML = `<i>${tips.get(level)}</i>`;
+
     }
     levelSpawn = findIndex(levelGridData, 2);
 
@@ -568,12 +579,9 @@ function endTest() {
     you.vy = 0;
 }
 
-
-
-
 // ####### GAMEPLAY #######
 
-let isKeyDown = {a:false,d:false,space:false};
+let isKeyDown = {a:false,d:false,space:false,shift:false};
 let animationFrame;
 
 function executeKeyboardInputs(dt) {
@@ -586,12 +594,21 @@ function executeKeyboardInputs(dt) {
         }
     }
 
-    if (isKeyDown.a && you.vx > -maxBaseSpeed) {
-        you.vx -= perfLimitedAccel;
+    if (isKeyDown.a) {
+        if (!dashing) {
+            dashDirection = -1;
+        }
+        if (you.vx > -maxBaseSpeed) {
+            you.vx -= perfLimitedAccel;
+        }
     }
     if (isKeyDown.d && you.vx < maxBaseSpeed) {
-        you.vx += perfLimitedAccel;
-
+        if (!dashing) {
+            dashDirection = 1;
+        }
+        if (you.vx < maxBaseSpeed) {
+            you.vx += perfLimitedAccel;
+        }
     }
     if (isKeyDown.space && !you.falling) {
         you.vy = -jumpStrength;
@@ -599,7 +616,7 @@ function executeKeyboardInputs(dt) {
 }
 
 function updateDebugMenu() {
-    document.getElementById("debugMenu").innerHTML = `x: ${you.l.toFixed(3)}<br>y: ${you.t.toFixed(3)}<br>vx: ${you.vx.toFixed(3)}<br>vy: ${you.vy.toFixed(3)}<br>time scale: ${timeScale}`;
+    document.getElementById("debugMenu").innerHTML = `x: ${you.l.toFixed(3)}<br>y: ${you.t.toFixed(3)}<br>vx: ${(you.l-you.ol).toFixed(3)}<br>vy: ${(you.t-you.ot).toFixed(3)}<br>time scale: ${timeScale}`;
 }
 
 function update(timestamp) {
@@ -612,7 +629,19 @@ function update(timestamp) {
 
     you.move(dt);
 
-    if (you.vy < TERMINAL_V) {
+    
+
+    if (dashing && dashTimer < MAX_DASH_TIME) {
+        dashTimer += dt;
+        you.setRight(you.r + dashDirection * DASH_SPEED_SCALE * dt);
+    } else if (!dashing && !you.falling) {
+        canDash = true;
+        dashing = false
+    } else {
+        dashing = false;
+    }
+
+    if (you.vy < TERMINAL_V && !dashing) {
         you.vy += GRAVITY * dt;
     }
 
@@ -631,6 +660,9 @@ function update(timestamp) {
     
     // hazard check
     if (spikes.some(spike => { return you.checkHazard(spike)})) {
+        you.vx = 0;
+        you.vy = 0;
+        dashing = false;
         respawn();
     }
 
@@ -648,14 +680,19 @@ function update(timestamp) {
 
 document.addEventListener("keydown", (KeyboardEvent) => {
     switch (KeyboardEvent.key) {
+        case "ArrowRight":
         case "d":
+        case "D":
             isKeyDown.d = true;
             break;
 
+        case "ArrowLeft":
         case "a":
+        case "A":
             isKeyDown.a = true;
             break;
 
+        case "ArrowUp":
         case " ":
             KeyboardEvent.preventDefault();
             isKeyDown.space = true;
@@ -672,25 +709,38 @@ document.addEventListener("keydown", (KeyboardEvent) => {
         case "-":
             timeScale -= 4;
             break;
-    
-
+        
+        case "Shift":
+            if (canDash) {
+                you.vy =0;
+                dashing = true;
+                dashTimer = 0;
+                canDash = false;
+            }
+            break;
 
         default:
+            console.log(KeyboardEvent.key);
             break;
     }
 });
 
 document.addEventListener("keyup", (KeyboardEvent) => {
     switch (KeyboardEvent.key) {
+            case "ArrowRight":
             case "d":
+            case "D":
                 isKeyDown.d = false;
                 break;
 
+            case "ArrowLeft":
             case "a":
+            case "A":
                 isKeyDown.a = false;
                 break;
 
-            case (" "):
+            case "ArrowUp":
+            case " ":
                 isKeyDown.space = false;
                 break;
 
