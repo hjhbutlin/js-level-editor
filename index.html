@@ -31,7 +31,7 @@
     </div>
 
     <div id="previewContainer" style="display: none" class="editor canvas-preview">
-        <p id="previewTitle">preview</p>
+        <p id="previewTitle">tile preview</p>
         <canvas id="preview"></canvas>
     </div>
 
@@ -40,15 +40,16 @@
         <p id="debugText">debug menu default text</p>
     </div>
 
+    <p id="canvasInfoText" style="display: none" class="editor">‎</p>
 
     <div id="canvasContainer" style="display: none" class="editor game">
         <canvas id="grid"></canvas>
     </div>
 
     <div id="secondaryButtons" style="display: none" class="editor button-panel">
+        <button id="ToggleGridButton" class="tool-button editor-button" aria-label="Toggle Grid">Grid</button>
         <button id="RotateButton" class="side-button button-disabled editor-button" aria-label="Rotate Clockwise">Rotate</button>
-        <button id="FlipButton" class="side-button button-disabled editor-button" aria-label="Flip">Flip</button>
-        <button id="MirrorButton" class="side-button button-disabled editor-button" aria-label="Mirror">Mirror</button>
+        <button id="EventButton" class="side-button button-disabled editor-button" aria-label="Toggle Event">Event</button>
     </div>
 
     <!-- editor toolbar -->
@@ -59,6 +60,7 @@
         <button id="PlatformButton" class="tool-button button-enabled editor-button" data-tool="1" data-name="platform" aria-label="Create platform">Platform</button>
         <button id="SpikeButton" class="tool-button button-enabled editor-button" data-tool="10" data-name="spike" aria-label="Place spike">Spike</button>
         <button id="DeleteButton" class="tool-button button-enabled editor-button" data-tool="0" data-name="delete" aria-label="Delete tile">Delete</button>
+        <button id="TriggerButton" class="tool-button trigger-button button-enabled editor-button" data-tool="4" data-name="trigger" aria-label="Place trigger">Trigger</button>
         <button id="ResetButton" class="important-button button-enabled editor-button" aria-label="Reset grid">Reset</button>
         <button id="SaveButton" class="important-button button-enabled editor-button" aria-label="Save level">Save</button>
         <button id="LoadButton" class="important-button button-enabled editor-button" aria-label="Load level">Load</button>

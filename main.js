@@ -16,7 +16,7 @@ let GRAVITY = 0.1;
 let maxBaseSpeed = 0.3;
 let jumpStrength = 0.7;
 let timeScale = 40;
-const TERMINAL_V = 0.6;
+const TERMINAL_V = 0.8;
 const DASH_SPEED_SCALE = 1;
 const MAX_DASH_TIME = 4;
 let dashing = false;
@@ -29,6 +29,8 @@ const MAX_LEVEL = 3;
 let currentLevel = 1;
 let totalLevels = 2;
 let levelSpawn= [0,0];
+let eventToggle = 0;
+const NUM_EVENTS = 2
 
 const debugMenu = document.getElementById("debugMenu");
 
@@ -37,25 +39,34 @@ const ROWS = 16;
 const COLS = 32;
 const SPAWN_TOOL = 2;
 const GOAL_TOOL = 3;
-const SELECTION_TOOL = 4;
+const TRIGGER_TOOL = 4;
 const SPIKE_BASE_NUMBER = 10;
 const GLOBAL_SCALE = 50;
 const PREVEIW_SCALE = 2;
 let spikeRotation = 0;
+const TILE_COLOURS = {
+    1: "darkred",       // platform
+    2: "darkcyan",      // spawn
+    3: "darkgreen",    // goal
+    4: "yellow",      // trigger toggle
+    5: "pink"
+};
 const SPIKE_VERTICES = [
     [0,1,0,0,1,0,1,1],
     [1,1,0,1,0,0,1,0],
     [0.5,0,1,0.5,0.5,1,0,0.5]
 ];
 const SSBs = [ // spike solid blocks  left top width height, rotations 10 11 12 13
-    [5/12,0,1/6,1/2 , 1,5/12,1/2,1/6 , 5/12,1,1/6,1/2, 0,5/12,1/2,1/6], // top thin
+    [5/12,0,1/6,1/2 , 1/2,5/12,1/2,1/6 , 5/12,1/2,1/6,1/2, 0,5/12,1/2,1/6], // top thin
     [1/4,1/2,1/2,3/8 , 1/8,1/4,3/8,1/2 , 1/4,1/8,1/2,3/8 , 1/2,1/4,3/8,1/2], // middle middle
     [0,7/8,1,1/8 , 0,0,1/8,1 , 0,0,1,1/8 , 7/8,0,1/8,1] // bottom fat
 ];
 let fade = 1;
+gridOn = true;
 
 // Editor/Game Grid Setup
 let levelGridData = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+let canvasElements = [];
 
 let spawnX = 0;
 let spawnY = ROWS-1;
@@ -85,12 +96,6 @@ class Canvas {
         this.canvas.height = this.scale * rows;
 
         this.tileSize = this.scale;
-
-        this.tileColours = {
-            1: "darkred",       // platform
-            2: "darkcyan",      // spawn
-            3: "darkgreen",    // goal
-        };
     }
 
     fillSpike(x,y,colour,rotation) {
@@ -98,6 +103,23 @@ class Canvas {
         this.ctx.moveTo((x + SPIKE_VERTICES[0][2*rotation]) * this.tileSize, (y + SPIKE_VERTICES[0][2*rotation + 1]) * this.tileSize);
         this.ctx.lineTo((x + SPIKE_VERTICES[1][2*rotation]) * this.tileSize, (y + SPIKE_VERTICES[1][2*rotation + 1]) * this.tileSize);
         this.ctx.lineTo((x + SPIKE_VERTICES[2][2*rotation]) * this.tileSize, (y + SPIKE_VERTICES[2][2*rotation + 1]) * this.tileSize);
+        this.ctx.closePath();
+        this.ctx.fillStyle = colour;
+        this.ctx.fill();
+    }
+
+    fillTrigger(x,y,colour) {
+
+        let l = (x + 1/6) * this.tileSize;
+        let t = (y + 1/6) * this.tileSize;
+        let b = (y + 5/6) * this.tileSize;
+        let r = (x + 5/6) * this.tileSize;
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(l,t);
+        this.ctx.lineTo(l,b);
+        this.ctx.lineTo(r,b);
+        this.ctx.lineTo(r,t);
         this.ctx.closePath();
         this.ctx.fillStyle = colour;
         this.ctx.fill();
@@ -115,7 +137,7 @@ class Canvas {
         for (let y = 0; y < this.rows; y++) {
     
             for (let x = 0; x < this.cols; x++) {
-                if (mode === 2) {
+                if (mode === 2 && gridOn) {
                     this.ctx.strokeStyle = "gray";
                     this.ctx.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                 }
@@ -123,9 +145,11 @@ class Canvas {
                 // handle spike case
                 if (gridData[y][x] >= 10 && gridData[y][x] <= 13) {
                     this.fillSpike(x, y, "red",gridData[y][x]-SPIKE_BASE_NUMBER);
-                } else if (this.tileColours[gridData[y][x]]) {
-                    this.ctx.fillStyle = this.tileColours[gridData[y][x]];
-                    this.ctx.fillRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                } else if (gridData[y][x] >= 4 && gridData[y][x] <= 9) {
+                    this.fillTrigger(x,y,TILE_COLOURS[gridData[y][x]], gridData[y][x] - eventToggle);
+                } else if (TILE_COLOURS[gridData[y][x]]) {
+                    this.ctx.fillStyle = TILE_COLOURS[gridData[y][x]];
+                    this.ctx.fillRect(x * this.tileSize + 1, y * this.tileSize + 1, this.tileSize - 1, this.tileSize - 1);
                 }
             }
         }
@@ -135,6 +159,7 @@ class Canvas {
         }
     }
 }
+
 
 window.onresize = function() {
     const w = window.innerWidth;
@@ -292,6 +317,8 @@ document.getElementById("startEditor").addEventListener("click", () => {
 
     document.querySelectorAll(".main-menu").forEach(element => {element.style.display = "none"});
     document.querySelectorAll(".editor").forEach(element => {element.style.display = "flex"});
+    document.getElementById("testLevelButton").style.display = "flex";
+
     console.log("launched editor");
     document.getElementById("levelTitle").innerHTML = `<b>Editor</b>`
 
@@ -338,7 +365,7 @@ function fillTile(event) {
     let row = Math.floor(y / gameCanvas.tileSize);
 
     try {
-        levelGridData[row][col] = selectedTool + spikeRotation;
+        levelGridData[row][col] = selectedTool + spikeRotation + eventToggle;
     } catch (error) {
         if (error instanceof TypeError) {
             console.log("rectified index out of range error")
@@ -351,10 +378,14 @@ function fillTile(event) {
         levelGridData[spawnY][spawnX] = 0;
         spawnX = col;
         spawnY = row;
+        levelGridData[spawnY][spawnX] = SPAWN_TOOL;
+
     } else if (selectedTool === GOAL_TOOL) {
         levelGridData[goalY][goalX] = 0;
         goalX = col;
         goalY = row;
+        levelGridData[goalY][goalX] = GOAL_TOOL;
+
     }
 
     gameCanvas.drawGrid(mode, levelGridData);
@@ -379,23 +410,27 @@ gameCanvas.canvas.addEventListener("mouseup", (event) => {
 document.querySelectorAll(".tool-button").forEach(button => {
     button.addEventListener("click", () => {
         selectedTool = Number(button.dataset.tool);
-        previewCanvas.drawGrid(2, previewArray(selectedTool));
+        document.querySelectorAll(".side-button").forEach(btn => btn.classList.add("button-disabled"));
+        document.querySelectorAll(".side-button").forEach(btn => btn.classList.remove("button-enabled"));
 
         if (selectedTool === 10) {
             document.getElementById("RotateButton").classList.remove("button-disabled");
             document.getElementById("RotateButton").classList.add("button-enabled");
-        } else {
-            document.getElementById("RotateButton").classList.add("button-disabled");
-            document.getElementById("RotateButton").classList.remove("button-enabled");
+        } else if (selectedTool === 4) {
+            document.getElementById("EventButton").classList.remove("button-disabled");
+            document.getElementById("EventButton").classList.add("button-enabled");
         }
 
         spikeRotation = 0;
+        eventToggle = 0;
 
         document.querySelectorAll(".tool-button").forEach(btn => { btn.classList.remove("active")});
 
         button.classList.add("active");
 
         console.log(`Switched to ${button.dataset.name}`);
+
+        previewCanvas.drawGrid(2,previewArray(selectedTool));
     });
 });
 
@@ -403,6 +438,13 @@ document.getElementById("RotateButton").onclick = function() {
     if (selectedTool === 10) {
         spikeRotation = (spikeRotation + 1 ) % 4;
         previewCanvas.drawGrid(2, previewArray(selectedTool + spikeRotation));
+    }
+}
+
+document.getElementById("EventButton").onclick = function() {
+    if (selectedTool === 4) {
+        eventToggle = (eventToggle + 1 ) % NUM_EVENTS;
+        previewCanvas.drawGrid(2, previewArray(selectedTool + eventToggle));
     }
 }
 
@@ -422,6 +464,8 @@ document.getElementById("ResetButton").onclick = function() {
     gameCanvas.drawGrid(mode, levelGridData);
     console.log("reset grid")
 }
+
+
 
 document.getElementById("testLevelButton").onclick = function() {
     document.getElementById("toolbar").style.display = "none";
@@ -672,8 +716,11 @@ function update(timestamp) {
     }
     gameCanvas.drawGrid(mode, levelGridData);
 
-    //gameCanvas.ctx.fillStyle = "green";
-    //blocks.forEach(block => {gameCanvas.ctx.fillRect(block.l*gameCanvas.tileSize ,block.t*gameCanvas.tileSize,3,3);});
+    // gameCanvas.ctx.fillStyle = "green";
+    // spikes.forEach(block => {gameCanvas.ctx.fillRect(block.l*gameCanvas.tileSize ,block.t*gameCanvas.tileSize,3,3);});
+    // spikes.forEach(block => {gameCanvas.ctx.fillRect(block.r*gameCanvas.tileSize ,block.t*gameCanvas.tileSize,3,3);});
+    // spikes.forEach(block => {gameCanvas.ctx.fillRect(block.l*gameCanvas.tileSize ,block.b*gameCanvas.tileSize,3,3);});
+    // spikes.forEach(block => {gameCanvas.ctx.fillRect(block.r*gameCanvas.tileSize ,block.b*gameCanvas.tileSize,3,3);});
 
     updateDebugMenu();
 }
@@ -711,7 +758,7 @@ document.addEventListener("keydown", (KeyboardEvent) => {
             break;
         
         case "Shift":
-            if (canDash) {
+            if (canDash && !gamePaused) {
                 you.vy =0;
                 dashing = true;
                 dashTimer = 0;

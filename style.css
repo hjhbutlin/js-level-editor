@@ -24,7 +24,7 @@ body {
     justify-content: center;
     align-items: center;
     position: relative;
-    margin-bottom: 5vh;
+    margin-bottom: 0vh;
 }
 
 .page-title {
@@ -37,6 +37,13 @@ p {
     margin-block-end: 0;
     margin-inline-start: 0;
     margin-inline-end: 0;
+}
+
+#canvasInfoText {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 5vh;
 }
 
 .back-button {
@@ -90,6 +97,10 @@ canvas {
     gap: 1vw;
 }
 
+#TriggerButton {
+    background-color: rgba(200, 180, 20, 0.7);
+}
+
 .side-button {
     padding: 1vw;
     font-size: 3vh;
@@ -135,11 +146,11 @@ button {
 }
 
 button.tool-button {
-    background-color: #04AA6D;
+    background-color: #038454;
 }
 
 button.button-enabled {
-    background-color: #04AA6D;
+    background-color: #038454;
 }
 button.important-button {
     background-color: #036742;
@@ -160,20 +171,20 @@ button.button-disabled:active {
 
 button:hover {
     scale: 1.1;
-    transform: rotate(5deg);
+    transform: rotate(3deg);
     transition-duration: 400ms;
 }
 
 
 button:active {
-    background-color: #19944a;
-    transform: scale(0.9);
+    scale: 0.9;
+    transform: rotate(-3deg);
     transition-duration: 400ms;
 }
 
 button.active {
-    background-color: #19944a;
-    transform: scale(0.9);
+    scale: 0.9;
+    transform: rotate(-3deg);
     transition-duration: 400ms;
 }
 
