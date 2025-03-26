@@ -37,20 +37,19 @@ const debugMenu = document.getElementById("debugMenu");
 // Canvas Constants
 const ROWS = 16;
 const COLS = 32;
-const SPAWN_TOOL = 2;
-const GOAL_TOOL = 3;
-const TRIGGER_TOOL = 4;
-const SPIKE_BASE_NUMBER = 10;
+
+const TILE_COLOURS = {
+    1: ["darkred"],
+    2: ["darkcyan"],
+    3: ["darkgreen"],
+    4: ["yellow","pink"],
+    5: ["red"]
+};
+
 const GLOBAL_SCALE = 50;
 const PREVEIW_SCALE = 2;
 let spikeRotation = 0;
-const TILE_COLOURS = {
-    1: "darkred",       // platform
-    2: "darkcyan",      // spawn
-    3: "darkgreen",    // goal
-    4: "yellow",      // trigger toggle
-    5: "pink"
-};
+
 const SPIKE_VERTICES = [
     [0,1,0,0,1,0,1,1],
     [1,1,0,1,0,0,1,0],
@@ -65,21 +64,15 @@ let fade = 1;
 gridOn = true;
 
 // Editor/Game Grid Setup
-let levelGridData = Array(ROWS).fill().map(() => Array(COLS).fill(0));
-let canvasElements = [];
+
 
 let spawnX = 0;
 let spawnY = ROWS-1;
 let goalY = ROWS-1;
 let goalX = COLS-1;
-levelGridData[spawnY][spawnX] = 2;
-levelGridData[goalY][goalX] = 3;
-
-
 
 let selectedTool = 0;
 let mouseDown = false;
-
 
 class Canvas {
 
@@ -125,7 +118,7 @@ class Canvas {
         this.ctx.fill();
     }
 
-    drawGrid(mode, gridData) {
+    drawGrid(mode, staticElements) {
         this.canvas.width = this.scale * this.cols;
         this.canvas.height = this.scale * this.rows;
         this.tileSize = this.scale;
@@ -133,26 +126,16 @@ class Canvas {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         // gridData[spawnY][spawnX] = 2;
         // gridData[goalY][goalX] = 3;
+        
+
+            staticElements.forEach(elements => {
+                // map elements to functions here
+                elements.forEach(element => {
+                    
+                });
+            });
     
-        for (let y = 0; y < this.rows; y++) {
-    
-            for (let x = 0; x < this.cols; x++) {
-                if (mode === 2 && gridOn) {
-                    this.ctx.strokeStyle = "gray";
-                    this.ctx.strokeRect(x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
-                }
-                
-                // handle spike case
-                if (gridData[y][x] >= 10 && gridData[y][x] <= 13) {
-                    this.fillSpike(x, y, "red",gridData[y][x]-SPIKE_BASE_NUMBER);
-                } else if (gridData[y][x] >= 4 && gridData[y][x] <= 9) {
-                    this.fillTrigger(x,y,TILE_COLOURS[gridData[y][x]], gridData[y][x] - eventToggle);
-                } else if (TILE_COLOURS[gridData[y][x]]) {
-                    this.ctx.fillStyle = TILE_COLOURS[gridData[y][x]];
-                    this.ctx.fillRect(x * this.tileSize + 1, y * this.tileSize + 1, this.tileSize - 1, this.tileSize - 1);
-                }
-            }
-        }
+        
         if (mode === 1) {
             this.ctx.fillStyle = `rgba(240,255,255,${fade})`;
             this.ctx.fillRect(you.l * this.tileSize, you.t * this.tileSize, this.tileSize, this.tileSize);
@@ -172,8 +155,8 @@ window.onresize = function() {
         previewCanvas.scale = w / GLOBAL_SCALE * PREVEIW_SCALE;
 
     }
-    previewCanvas.drawGrid(2, previewArray(selectedTool));
-    gameCanvas.drawGrid(mode, levelGridData);
+    previewCanvas.drawGrid(2, previewObject(selectedTool));
+    gameCanvas.drawGrid(mode, staticCanvasElements);
 };
 
 class CanvasElement {
@@ -186,11 +169,6 @@ class CanvasElement {
         this.h = h;
         this.vx = 0;
         this.vy = 0;
-
-        this.spaceLeft = true;
-        this.spaceRight = true;
-        this.spaceUp = true;
-        this.spaceDown = true;
     }
 
     move(dt) {
@@ -223,23 +201,23 @@ class Player extends CanvasElement {
             return;
         }
 
-        if (this.r > s.l && this.or <= s.l && s.spaceLeft) {
+        if (this.r > s.l && this.or <= s.l) {
             this.setRight(s.l);
             this.vx = s.vx;
         }
 
-        if (this.l < s.r && this.ol >= s.r && s.spaceRight) {
+        if (this.l < s.r && this.ol >= s.r) {
             this.setLeft(s.r);
             this.vx = s.vx;
         }
 
-        if (this.b > s.t && this.ob <= s.t && s.spaceUp) {
+        if (this.b > s.t && this.ob <= s.t) {
             this.setBottom(s.t);
             this.falling = false;
             this.vy = s.vy;
         }
         
-        if (this.t < s.b && this.ot >= s.b && s.spaceDown) {
+        if (this.t < s.b && this.ot >= s.b) {
             this.setTop(s.b);
             this.vy = s.vy;
         }
@@ -279,12 +257,18 @@ class Player extends CanvasElement {
     }
 }
 
-
+const staticCanvasElements = {
+    1 : [],                                       // platforms
+    2 : new CanvasElement(spawnX, spawnY, 1, 1),  // spawn
+    3 : new CanvasElement(goalX, goalY, 1, 1),    // goal
+    4 : [],                                       // toggles
+    5 : []                                        // spikes
+};
 
 
 // Declarationnnn
 
-function previewArray(tool) {return [[0,0,0],[0,tool,0],[0,0,0]];}
+function previewObject(tool) {return new {tool: new CanvasElement(1,1,1,1)};}
 
 let gameCanvas = new Canvas("grid",COLS,ROWS,GLOBAL_SCALE);
 let blocks = [];
