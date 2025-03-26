@@ -6,8 +6,13 @@
 I wanted to refresh my HTML CSS JS basics, as well as try my hand at creating a complex level editor while keeping the UI simple and easy to use.
 
 <h2>Built So far...</h2>
+
 - Base game physics
+
 - Some example levels
+  
 - The base level editor
 
 <h2>Screenshots</h2>
+
+<img src="editor-eg.png" style="width: 500px;"> <img src="game-eg.png" style="width: 500px;">
